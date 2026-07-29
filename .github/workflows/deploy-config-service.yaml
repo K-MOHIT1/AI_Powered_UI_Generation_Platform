@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'config-service/**'
+      - "config-service/**"
 
 env:
   SERVICE_NAME: config-service
@@ -27,8 +27,8 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: "21"
+          distribution: "temurin"
           cache: maven
 
       - name: Build and Push Docker Image with Jib
@@ -43,8 +43,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: '${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}'
-          service_account: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
+          workload_identity_provider: "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}"
+          service_account: "${{ secrets.GCP_SERVICE_ACCOUNT }}"
 
       - name: Get GKE Credentials
         uses: google-github-actions/get-gke-credentials@v2
@@ -57,5 +57,5 @@ jobs:
           kubectl set image deployment/${{ env.SERVICE_NAME }} \
           ${{ env.SERVICE_NAME }}=${{ env.IMAGE_NAME }}:${{ github.sha }} \
           -n promptic-core
-          
+
           kubectl rollout status deployment/${{ env.SERVICE_NAME }} -n promptic-core
