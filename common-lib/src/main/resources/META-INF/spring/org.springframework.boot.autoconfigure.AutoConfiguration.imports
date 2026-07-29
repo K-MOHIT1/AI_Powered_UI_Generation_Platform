@@ -1,0 +1,2 @@
+com.codingshuttle.promptic.common_lib.security.SharedSecurityAutoConfiguration
+com.codingshuttle.promptic.common_lib.error.SharedExceptionAutoConfiguration

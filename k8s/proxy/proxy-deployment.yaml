@@ -1,0 +1,50 @@
+# k8s/proxy/proxy-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promptic-me-proxy
+  namespace: promptic-core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: promptic-me-proxy
+  template:
+    metadata:
+      labels:
+        app: promptic-me-proxy
+    spec:
+      containers:
+        - name: promptic-me-proxy
+          image: itzmohit96/promptic-me-proxy:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "250m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: promptic-shared-config
+          env:
+            - name: REDIS_URL
+              value: "redis://redis-0.redis.promptic-core.svc.cluster.local:6379" 
+            - name: PORT
+              value: "80"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: promptic-me-proxy
+  namespace: promptic-core
+spec:
+  selector:
+    app: promptic-me-proxy
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,64 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: promptic-main-ingress
+  namespace: promptic-core
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: "nginx"
+  rules:
+  # 1. Main Website Route (The Frontend!)
+  - host: "promptic.site"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: promptic-frontend
+            port:
+              number: 80
+              
+  - host: "www.promptic.site"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: promptic-frontend
+            port:
+              number: 80
+
+  # 2. Previews Route
+  - host: "*.previews.promptic.site"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: promptic-me-proxy
+            port:
+              number: 80
+  
+  # 3. API Gateway Route
+  - host: "api.promptic.site"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 80
+  tls:
+    - hosts:
+        - promptic.site
+        - www.promptic.site
+        - api.promptic.site
+      secretName: promptic-tls
