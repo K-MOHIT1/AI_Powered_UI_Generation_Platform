@@ -37,16 +37,15 @@ jobs:
         working-directory: ./common-lib
         run: chmod +x mvnw
 
-      - name: Debug Common Lib
+      - name: Build and Install Common Lib
         working-directory: ./common-lib
         run: |
-          pwd
-          ls -la
-          file mvnw
           chmod +x mvnw
-          ls -l mvnw
-          ./mvnw --version
-
+          ./mvnw clean install -DskipTests
+      
+      - name: Verify Common Lib Installation
+        run: |
+          ls -R ~/.m2/repository/com/codingshuttle/promptic || true
 
       - name: Make Account Service Maven Wrapper Executable
         working-directory: ./account-service
