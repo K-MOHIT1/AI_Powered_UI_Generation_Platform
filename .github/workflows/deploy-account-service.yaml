@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "account-service/**"
+      - "common-lib/**"
+      - ".github/workflows/deploy-account-service.yaml"
 
 env:
   SERVICE_NAME: account-service

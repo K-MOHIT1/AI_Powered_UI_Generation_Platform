@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "config-service/**"
+      - ".github/workflows/deploy-config-service.yaml"
 
 env:
   SERVICE_NAME: config-service

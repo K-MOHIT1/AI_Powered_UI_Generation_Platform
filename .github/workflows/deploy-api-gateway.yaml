@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "api-gateway/**"
+      - ".github/workflows/deploy-api-gateway.yaml"
 
 env:
   SERVICE_NAME: api-gateway
