@@ -7,6 +7,7 @@ import com.codingshuttle.promptic.account_service.entity.User;
 import com.codingshuttle.promptic.account_service.mapper.UserMapper;
 import com.codingshuttle.promptic.account_service.repository.UserRepository;
 import com.codingshuttle.promptic.account_service.service.AuthService;
+import com.codingshuttle.promptic.account_service.service.SubscriptionService;
 import com.codingshuttle.promptic.common_lib.error.BadRequestException;
 import com.codingshuttle.promptic.common_lib.security.AuthUtil;
 import com.codingshuttle.promptic.common_lib.security.JwtUserPrincipal;
@@ -18,6 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 import java.util.ArrayList;
 
@@ -31,19 +33,22 @@ public class AuthServiceImpl implements AuthService {
     PasswordEncoder passwordEncoder;
     AuthUtil authUtil;
     AuthenticationManager authenticationManager;
+    SubscriptionService subscriptionService;
 
     @Override
+    @Transactional
     public AuthResponse signup(SignupRequest request) {
         userRepository.findByUsername(request.username()).ifPresent(user -> {
-            throw new BadRequestException("User already exists with username: "+request.username());
+            throw new BadRequestException("User already exists with username: " + request.username());
         });
 
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.password()));
         user = userRepository.save(user);
+        subscriptionService.createFreeSubscriptionForUser(user.getId());
 
         JwtUserPrincipal jwtUserPrincipal = new JwtUserPrincipal(user.getId(), user.getName(),
-                user.getUsername(), null,  new ArrayList<>());
+                user.getUsername(), null, new ArrayList<>());
 
         String token = authUtil.generateAccessToken(jwtUserPrincipal);
         return new AuthResponse(token, userMapper.toUserProfileResponse(jwtUserPrincipal));
@@ -52,8 +57,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password())
-        );
+                new UsernamePasswordAuthenticationToken(request.username(), request.password()));
 
         JwtUserPrincipal user = (JwtUserPrincipal) authentication.getPrincipal();
         String token = authUtil.generateAccessToken(user);
@@ -61,4 +65,3 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(token, userMapper.toUserProfileResponse(user));
     }
 }
-

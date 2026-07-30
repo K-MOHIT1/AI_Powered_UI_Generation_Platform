@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -31,9 +32,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionMapper subscriptionMapper;
     private final UserRepository userRepository;
     private final PlanRepository planRepository;
-
-    private final Integer FREE_TIER_PROJECTS_ALLOWED = 100;
-
 
     @Override
     public SubscriptionResponse getCurrentSubscription() {
@@ -57,6 +55,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         User user = getUser(userId);
         Plan plan = getPlan(planId);
+
+        subscriptionRepository.findByUserIdAndStatusIn(userId, Set.of(
+                SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE, SubscriptionStatus.TRIALING
+        )).ifPresent(currentSubscription -> {
+            currentSubscription.setStatus(SubscriptionStatus.CANCELED);
+            subscriptionRepository.save(currentSubscription);
+        });
         
         Subscription subscription = Subscription.builder()
                 .user(user)
@@ -111,8 +116,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     public void cancelSubscription(String gatewaySubscriptionId) {
         Subscription subscription = getSubscription(gatewaySubscriptionId);
-        subscription.setStatus(SubscriptionStatus.CANCELED);
-        subscriptionRepository.save(subscription);
+        if (subscription.getStatus() != SubscriptionStatus.CANCELED) {
+            subscription.setStatus(SubscriptionStatus.CANCELED);
+            subscriptionRepository.save(subscription);
+        }
+        createFreeSubscriptionForUser(subscription.getUser().getId());
     }
 
     @Override
@@ -149,6 +157,35 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public PlanDto getCurrentSubscribedPlanByUser() {
         SubscriptionResponse subscriptionResponse = getCurrentSubscription();
         return subscriptionResponse.plan();
+    }
+
+    @Override
+    public void createFreeSubscriptionForUser(Long userId) {
+        if (subscriptionRepository.findByUserIdAndStatusIn(userId, Set.of(
+                SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE, SubscriptionStatus.TRIALING
+        )).isPresent()) {
+            return;
+        }
+
+        User user = getUser(userId);
+        Plan freePlan = planRepository.findByNameIgnoreCaseAndActiveTrue("Free")
+                .orElseThrow(() -> new ResourceNotFoundException("active Free plan", "Free"));
+
+        Subscription subscription = Subscription.builder()
+                .user(user)
+                .plan(freePlan)
+                .status(SubscriptionStatus.ACTIVE)
+                .cancelAtPeriodEnd(false)
+                .build();
+        subscriptionRepository.save(subscription);
+    }
+
+    @Override
+    public List<PlanDto> getAvailablePlans() {
+        return planRepository.findAll().stream()
+                .filter(plan -> Boolean.TRUE.equals(plan.getActive()))
+                .map(subscriptionMapper::toPlanResponse)
+                .toList();
     }
 
     ///  Utility methods

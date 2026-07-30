@@ -10,6 +10,7 @@ import com.codingshuttle.promptic.account_service.repository.UserRepository;
 import com.codingshuttle.promptic.account_service.service.PaymentProcessor;
 import com.codingshuttle.promptic.account_service.service.SubscriptionService;
 import com.codingshuttle.promptic.common_lib.enums.SubscriptionStatus;
+import com.codingshuttle.promptic.common_lib.dto.PlanDto;
 import com.codingshuttle.promptic.common_lib.error.BadRequestException;
 import com.codingshuttle.promptic.common_lib.error.ResourceNotFoundException;
 import com.codingshuttle.promptic.common_lib.security.AuthUtil;
@@ -42,6 +43,14 @@ public class StripePaymentProcessor implements PaymentProcessor {
     public CheckoutResponse createCheckoutSessionUrl(CheckoutRequest request) {
         Plan plan = planRepository.findById(request.planId()).orElseThrow(() ->
                 new ResourceNotFoundException("Plan", request.planId().toString()));
+        if (!Boolean.TRUE.equals(plan.getActive()) || plan.getStripePriceId() == null || plan.getStripePriceId().isBlank()) {
+            throw new BadRequestException("Please select an active paid plan.");
+        }
+
+        PlanDto currentPlan = subscriptionService.getCurrentSubscribedPlanByUser();
+        if (currentPlan != null && currentPlan.id() != null && !"Free".equalsIgnoreCase(currentPlan.name())) {
+            throw new BadRequestException("Manage your existing paid subscription in the billing portal.");
+        }
 
         Long userId = authUtil.getCurrentUserId();
         User user = userRepository.findById(userId).orElseThrow(() ->
@@ -58,8 +67,8 @@ public class StripePaymentProcessor implements PaymentProcessor {
                                         .build())
                                 .build()
                 )
-                .setSuccessUrl(frontendUrl + "/success.html?session_id={CHECKOUT_SESSION_ID}")
-                .setCancelUrl(frontendUrl + "/cancel.html")
+                .setSuccessUrl(frontendUrl + "/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(frontendUrl + "/billing?checkout=canceled")
                 .putMetadata("user_id", userId.toString())
                 .putMetadata("plan_id", plan.getId().toString());
 

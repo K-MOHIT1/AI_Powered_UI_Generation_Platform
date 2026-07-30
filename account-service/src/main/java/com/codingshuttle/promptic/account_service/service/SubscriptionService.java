@@ -6,6 +6,7 @@ import com.codingshuttle.promptic.common_lib.dto.PlanDto;
 import com.codingshuttle.promptic.common_lib.enums.SubscriptionStatus;
 
 import java.time.Instant;
+import java.util.List;
 
 public interface SubscriptionService {
     SubscriptionResponse getCurrentSubscription();
@@ -21,5 +22,9 @@ public interface SubscriptionService {
     void markSubscriptionPastDue(String subId);
 
     PlanDto getCurrentSubscribedPlanByUser();
+
+    void createFreeSubscriptionForUser(Long userId);
+
+    List<PlanDto> getAvailablePlans();
 }
 

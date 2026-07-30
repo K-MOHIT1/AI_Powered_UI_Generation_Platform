@@ -17,7 +17,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import com.codingshuttle.promptic.common_lib.dto.PlanDto;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,6 +35,11 @@ public class BillingController {
     @GetMapping("/api/me/subscription")
     public ResponseEntity<SubscriptionResponse> getMySubscription() {
         return ResponseEntity.ok(subscriptionService.getCurrentSubscription());
+    }
+
+    @GetMapping("/api/plans")
+    public ResponseEntity<List<PlanDto>> getPlans() {
+        return ResponseEntity.ok(subscriptionService.getAvailablePlans());
     }
 
     @PostMapping("/api/payments/checkout")
