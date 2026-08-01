@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,10 +46,12 @@ public class ProjectController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.softDelete(id);
+        deploymentService.release(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/deploy")
+    @PreAuthorize("@security.canEditProject(#id)")
     public ResponseEntity<DeployResponse> deployProject(@PathVariable Long id) {
         return ResponseEntity.ok(deploymentService.deploy(id));
     }

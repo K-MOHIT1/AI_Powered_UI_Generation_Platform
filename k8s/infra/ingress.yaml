@@ -6,6 +6,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: "nginx"
@@ -62,3 +63,6 @@ spec:
         - www.promptic.site
         - api.promptic.site
       secretName: promptic-tls
+    - hosts:
+        - "*.previews.promptic.site"
+      secretName: promptic-previews-tls

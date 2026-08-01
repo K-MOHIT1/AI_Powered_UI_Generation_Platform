@@ -1,0 +1,56 @@
+name: Deploy Workspace Service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "workspace-service/**"
+      - "common-lib/**"
+      - "k8s/services/workspace-service.yaml"
+      - ".github/workflows/deploy-workspace-service.yaml"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  SERVICE_NAME: workspace-service
+  IMAGE_NAME: itzmohit96/promptic-workspace-service
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+      - name: Build common library
+        working-directory: ./common-lib
+        run: |
+          chmod +x mvnw
+          ./mvnw clean install -DskipTests
+      - name: Build and push service image
+        working-directory: ./workspace-service
+        run: |
+          chmod +x mvnw
+          ./mvnw compile jib:build \
+            -Djib.to.image=docker.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            -Djib.to.tags=latest \
+            -Djib.to.auth.username=${{ secrets.DOCKERHUB_USERNAME }} \
+            -Djib.to.auth.password=${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GCP_CLUSTER }}
+          location: ${{ secrets.GCP_ZONE }}
+      - name: Roll out workspace service
+        run: |
+          kubectl apply -f k8s/services/workspace-service.yaml
+          kubectl set image deployment/${{ env.SERVICE_NAME }} ${{ env.SERVICE_NAME }}=${{ env.IMAGE_NAME }}:${{ github.sha }} -n promptic-core
+          kubectl rollout status deployment/${{ env.SERVICE_NAME }} -n promptic-core
