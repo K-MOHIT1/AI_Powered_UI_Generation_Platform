@@ -21,7 +21,8 @@ spec:
       containers:
         # 1. THE RUNNER (Vite / Node.js)
         - name: runner
-          image: node:20-alpine
+          image: docker.io/itzmohit96/promptic-preview-runner:latest
+          imagePullPolicy: Always
           workingDir: /app
           command: ["/bin/sh", "-c", "sleep infinity"]
           volumeMounts:

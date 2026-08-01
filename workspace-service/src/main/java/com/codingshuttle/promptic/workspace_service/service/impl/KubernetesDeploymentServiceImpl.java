@@ -165,7 +165,7 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
         // Keep deployment responsive: installation and Vite startup continue in
         // the runner while the API immediately returns the preview URL. This is
         // the behavior used by the original, working preview pool.
-        String startCmd = "nohup sh -c 'npm install --no-audit --no-fund && "
+        String startCmd = "nohup sh -c 'npm install --prefer-offline --no-audit --no-fund && "
                 + "npm run dev -- --host 0.0.0.0 --port 5173 --strictPort' "
                 + "> /app/dev.log 2>&1 &";
         execCommand(podName, "runner", "sh", "-c", startCmd);
