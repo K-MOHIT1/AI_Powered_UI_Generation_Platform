@@ -32,11 +32,11 @@ spec:
             - containerPort: 5173
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
               memory: "1Gi"
-              cpu: "500m"
+              cpu: "1"
+            limits:
+              memory: "2Gi"
+              cpu: "2"
 
         # 2. THE SYNCER (MinIO mc)
         - name: syncer

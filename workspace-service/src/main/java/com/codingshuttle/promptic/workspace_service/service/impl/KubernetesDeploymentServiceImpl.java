@@ -106,8 +106,8 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
             });
             redisTemplate.delete(CLAIM_KEY_PREFIX + podName);
 
-            execCommand(podName, "runner", "sh", "-c",
-                    "rm -rf /app/* && cp -a /opt/starter/node_modules /app/node_modules");
+           execCommand(podName, "runner", 120, "sh", "-c",
+                "rm -rf /app/* && cp -a /opt/starter/node_modules /app/node_modules");
 
             String mirrorCmd = String.format("mc mirror --overwrite myminio/projects/%d/ /app/", projectId);
             execCommand(podName, "syncer", "sh", "-c", mirrorCmd);
