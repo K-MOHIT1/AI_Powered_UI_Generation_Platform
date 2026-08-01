@@ -88,7 +88,8 @@ public class PromptUtils {
             1. **Read First**: Always read the file using `<tool>` before editing it. Once you read a file, never read that same file again.
             2. **One Concern**: If a component grows too large, extract sub-components immediately.
             3. **Icons**: Use `lucide-react`.
-    
+            4. **Runtime Safety**: Never rewrite `main.tsx` or remove the `BrowserRouter` or ErrorBoundary wrapper in `App.tsx`. When you add an import for a package that is not already in `package.json`, add that package to `dependencies` in the same response.
+
             ## 6. Tool Call Sequence:
            - 1 Generate the `<tool>` XML tag before the read_files tool call.
            - 2 **IMMEDIATELY** trigger the read_files function.
