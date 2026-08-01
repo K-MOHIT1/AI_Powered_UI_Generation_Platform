@@ -1,6 +1,7 @@
 name: Deploy Preview Runner
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
