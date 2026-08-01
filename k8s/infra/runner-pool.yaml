@@ -21,10 +21,7 @@ spec:
       containers:
         # 1. THE RUNNER (Vite / Node.js)
         - name: runner
-          # `latest` keeps a manual kubectl apply usable; CI replaces it with an
-          # immutable commit tag for each rollout.
-          image: docker.io/itzmohit96/promptic-preview-runner:latest
-          imagePullPolicy: Always
+          image: node:20-alpine
           workingDir: /app
           command: ["/bin/sh", "-c", "sleep infinity"]
           volumeMounts:

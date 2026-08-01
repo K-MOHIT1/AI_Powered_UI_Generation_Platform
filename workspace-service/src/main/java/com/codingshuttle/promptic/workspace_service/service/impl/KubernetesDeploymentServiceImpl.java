@@ -39,7 +39,6 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
     private static final String CLAIM_KEY_PREFIX = "preview-runner-claim:";
     private static final long CLAIM_TTL_SECONDS = 60;
     private static final int STREAM_TAIL_LIMIT = 2000;
-    private static final long INSTALL_TIMEOUT_SECONDS = 300;
 
     public DeployResponse deploy(Long projectId) {
         // Dynamically build the domain: project-123.app.domain.com
@@ -163,19 +162,13 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
     }
 
     private void startPreviewServer(String podName) {
-        // Never copy a prebuilt node_modules directory into a generated project:
-        // it can be incompatible with that project's package.json and npm ci
-        // deletes it anyway. The runner image retains npm's download cache, so
-        // --prefer-offline still speeds up installations without corrupting deps.
-        String installCmd = "if [ -f package-lock.json ]; then "
-                + "npm ci --prefer-offline --no-audit --no-fund; "
-                + "else npm install --prefer-offline --no-audit --no-fund; fi";
-        execCommand(podName, "runner", INSTALL_TIMEOUT_SECONDS, "sh", "-c", installCmd);
-
-        String startCmd = "nohup npm run dev -- --host 0.0.0.0 --port 5173 --strictPort "
+        // Keep deployment responsive: installation and Vite startup continue in
+        // the runner while the API immediately returns the preview URL. This is
+        // the behavior used by the original, working preview pool.
+        String startCmd = "nohup sh -c 'npm install --no-audit --no-fund && "
+                + "npm run dev -- --host 0.0.0.0 --port 5173 --strictPort' "
                 + "> /app/dev.log 2>&1 &";
         execCommand(podName, "runner", "sh", "-c", startCmd);
-        waitForPreviewServer(podName);
     }
 
     private boolean isPreviewServerReady(String podName) {
@@ -186,15 +179,6 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
         } catch (RuntimeException ignored) {
             return false;
         }
-    }
-
-    /** Wait until Vite is accepting requests before reporting a successful deployment. */
-    private void waitForPreviewServer(String podName) {
-        String readinessCommand = "for i in $(seq 1 90); do "
-                + "wget -q -T 2 -O /dev/null http://127.0.0.1:5173 && exit 0; "
-                + "sleep 1; "
-                + "done; exit 1";
-        execCommand(podName, "runner", 120, "sh", "-c", readinessCommand);
     }
 
     private void execCommand(String podName, String container, String... command) {
